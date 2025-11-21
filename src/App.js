@@ -2,17 +2,15 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./App.css";
 
+const backendURL = "http://localhost:3001"; // หรือ URL ที่ deploy จริง
+
 function App() {
   const [input, setInput] = useState("");
   const [history, setHistory] = useState([]);
 
-  
-  const backendURL = "https://my-calculator-2.onrender.com"; // <-- ประกาศนี้สำคัญ
-
-
   const fetchHistory = async () => {
     try {
-      const res = await axios.get(`${backendURL}/api/history`)
+      const res = await axios.get(`${backendURL}/api/history`);
       setHistory(res.data);
     } catch (err) {
       console.error("Fetch history error:", err);
@@ -36,7 +34,6 @@ function App() {
         fetchHistory();
       } catch (err) {
         console.error(err);
-        // ไม่ลบ input เดิม ให้ user แก้ไขได้
       }
     } else {
       setInput(input + value);
