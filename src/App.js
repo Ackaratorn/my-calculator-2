@@ -8,7 +8,7 @@ function App() {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get("http://localhost:3001/api/history");
+      const res = await axios.get("http://192.168.0.119:3001/api/history");
       setHistory(res.data);
     } catch (err) {
       console.error("Fetch history error:", err);
@@ -27,7 +27,7 @@ function App() {
     } else if (value === "=") {
       if (!input) return;
       try {
-        const res = await axios.post("http://localhost:3001/api/calculate", { expression: input });
+        const res = await axios.post("http://192.168.0.119:3001/api/calculate", { expression: input });
         setInput(String(res.data.result));
         fetchHistory();
       } catch (err) {
