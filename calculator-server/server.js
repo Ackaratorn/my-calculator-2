@@ -1,50 +1,60 @@
-require("dotenv").config();
 const express = require("express");
-const mysql = require("mysql2");
 const cors = require("cors");
+const bodyParser = require("body-parser");
+const sqlite3 = require("sqlite3").verbose();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-// MySQL connection
-const connection = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "121251", // เปลี่ยนเป็นรหัสจริงของมึง
-  database: "calculator_db",
-  port: 3306
+// สร้างฐานข้อมูล SQLite
+const db = new sqlite3.Database("./calculator.db", (err) => {
+  if (err) console.error(err.message);
+  else console.log("Connected to SQLite DB ✅");
 });
 
-connection.connect(err => {
-  if (err) console.error("MySQL Connect Error:", err);
-  else console.log("MySQL connected ✅");
-});
+// สร้างตาราง history
+db.run(`CREATE TABLE IF NOT EXISTS history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  expression TEXT NOT NULL,
+  result TEXT NOT NULL
+)`);
 
 // POST /calculate
-app.post("/calculate", (req, res) => {
-  const { expression, result } = req.body;
-
-  if (!expression || !result) return res.status(400).json({ error: "Missing data" });
-
-  const sql = "INSERT INTO history (expression, result) VALUES (?, ?)";
-  connection.query(sql, [expression, result], (err) => {
-    if (err) {
-      console.error("MySQL INSERT Error:", err);
-      return res.status(500).json({ error: err });
+app.post("/api/calculate", (req, res) => {
+  const { expression } = req.body;
+  let result;
+  try {
+    // คำนวณ expression แบบปลอดภัย (เลข + - * / .)
+    if (!/^[0-9+\-*/.() ]+$/.test(expression)) {
+      throw new Error("Invalid characters");
     }
-    console.log("Saved to DB:", expression, result);
-    res.json({ status: "saved" });
-  });
+    result = eval(expression); // ระวัง eval ใช้เฉพาะ trusted input
+    // บันทึกลง history
+    db.run(
+      "INSERT INTO history (expression, result) VALUES (?, ?)",
+      [expression, result],
+      (err) => {
+        if (err) console.error(err.message);
+      }
+    );
+    res.json({ result });
+  } catch (err) {
+    console.error(err.message);
+    res.status(400).json({ error: "Invalid expression" });
+  }
 });
 
 // GET /history
-app.get("/history", (req, res) => {
-  connection.query("SELECT * FROM history ORDER BY id DESC", (err, data) => {
-    if (err) return res.status(500).json({ error: err });
-    res.json(data);
+app.get("/api/history", (req, res) => {
+  db.all("SELECT * FROM history ORDER BY id DESC", [], (err, rows) => {
+    if (err) {
+      console.error(err.message);
+      res.status(500).json({ error: err.message });
+    } else {
+      res.json(rows);
+    }
   });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(3001, () => console.log("Server running on port 3001 ✅"));

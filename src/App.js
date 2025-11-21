@@ -8,7 +8,7 @@ function App() {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/history");
+      const res = await axios.get("http://localhost:3001/api/history");
       setHistory(res.data);
     } catch (err) {
       console.error("Fetch history error:", err);
@@ -27,20 +27,12 @@ function App() {
     } else if (value === "=") {
       if (!input) return;
       try {
-        const result = String(eval(input));
-        setInput(result);
-
-        console.log("Sending to backend:", { expression: input, result });
-
-        await axios.post("http://localhost:3000/calculate", {
-          expression: input,
-          result
-        });
-
+        const res = await axios.post("http://localhost:3001/api/calculate", { expression: input });
+        setInput(String(res.data.result));
         fetchHistory();
-
-      } catch {
-        setInput("Error");
+      } catch (err) {
+        console.error(err);
+        // ไม่ลบ input เดิม ให้ user แก้ไขได้
       }
     } else {
       setInput(input + value);
