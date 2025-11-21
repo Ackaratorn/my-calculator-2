@@ -8,40 +8,43 @@ app.use(cors());
 app.use(express.json());
 
 // MySQL connection
-const db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+const connection = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "121251", // เปลี่ยนเป็นรหัสจริงของมึง
+  database: "calculator_db",
+  port: 3306
 });
 
-db.connect((err) => {
-    if (err) {
-        console.error("❌ MySQL Connect Error:", err);
-        return;
-    }
-    console.log("✅ Connected to MySQL");
+connection.connect(err => {
+  if (err) console.error("MySQL Connect Error:", err);
+  else console.log("MySQL connected ✅");
 });
 
-// Save calculation
+// POST /calculate
 app.post("/calculate", (req, res) => {
-    const { expression, result } = req.body;
-    const sql = "INSERT INTO history (expression, result) VALUES (?, ?)";
-    db.query(sql, [expression, result], (err, data) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json({ status: "saved" });
-    });
+  const { expression, result } = req.body;
+
+  if (!expression || !result) return res.status(400).json({ error: "Missing data" });
+
+  const sql = "INSERT INTO history (expression, result) VALUES (?, ?)";
+  connection.query(sql, [expression, result], (err) => {
+    if (err) {
+      console.error("MySQL INSERT Error:", err);
+      return res.status(500).json({ error: err });
+    }
+    console.log("Saved to DB:", expression, result);
+    res.json({ status: "saved" });
+  });
 });
 
-// Get history
+// GET /history
 app.get("/history", (req, res) => {
-    db.query("SELECT * FROM history ORDER BY id DESC", (err, data) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(data);
-    });
+  connection.query("SELECT * FROM history ORDER BY id DESC", (err, data) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(data);
+  });
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`🚀 Server running on port ${port}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

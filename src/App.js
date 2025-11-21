@@ -7,12 +7,16 @@ function App() {
   const [history, setHistory] = useState([]);
 
   const fetchHistory = async () => {
-    const res = await axios.get("http://localhost:3000/history");
-    setHistory(res.data);
+    try {
+      const res = await axios.get("http://localhost:3000/history");
+      setHistory(res.data);
+    } catch (err) {
+      console.error("Fetch history error:", err);
+    }
   };
 
   useEffect(() => {
-    fetchHistory(); // โหลดตอนเข้าเว็บ
+    fetchHistory();
   }, []);
 
   const handleClick = async (value) => {
@@ -21,17 +25,18 @@ function App() {
     } else if (value === "DE") {
       setInput(input.slice(0, -1));
     } else if (value === "=") {
+      if (!input) return;
       try {
         const result = String(eval(input));
         setInput(result);
 
-        // ส่งไป backend
+        console.log("Sending to backend:", { expression: input, result });
+
         await axios.post("http://localhost:3000/calculate", {
           expression: input,
-          result: result
+          result
         });
 
-        // อัปเดตประวัติใหม่
         fetchHistory();
 
       } catch {
@@ -53,9 +58,8 @@ function App() {
   return (
     <div className="calculator">
       <div className="display">{input || "0"}</div>
-
       <div className="buttons">
-        {buttons.map((btn) => (
+        {buttons.map(btn => (
           <button
             key={btn}
             className={btn === "=" ? "equal" : ""}
@@ -65,10 +69,9 @@ function App() {
           </button>
         ))}
       </div>
-
       <div className="history">
         <h3>History</h3>
-        {history.map((h) => (
+        {history.map(h => (
           <div key={h.id}>{h.expression} = {h.result}</div>
         ))}
       </div>
