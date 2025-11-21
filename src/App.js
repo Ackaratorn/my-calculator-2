@@ -6,6 +6,10 @@ function App() {
   const [input, setInput] = useState("");
   const [history, setHistory] = useState([]);
 
+  
+  const backendURL = "https://my-calculator-2.onrender.com"; // <-- ประกาศนี้สำคัญ
+
+
   const fetchHistory = async () => {
     try {
       const res = await axios.get(`${backendURL}/api/history`)
